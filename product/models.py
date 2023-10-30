@@ -4,8 +4,8 @@ from utils.models import PaymentCurrency
 
 
 class SubPeriodTypes(models.TextChoices):
-    month = 'by month'
-    day = 'by day'
+    month = 'month'
+    day = 'day'
 
 
 class Product(models.Model):
@@ -60,3 +60,24 @@ class Product(models.Model):
         verbose_name = 'Продукт'
         verbose_name_plural = 'Продукты'
 
+
+class ProductsInMemory:
+    products_by_id: dict[int: Product] = {}
+    trial_products: list = []
+    not_trial_products: list = []
+
+    @classmethod
+    async def get(cls, pk, *args, **kwargs):
+        product = cls.products_by_id.get(pk, None)
+        if not product:
+            await cls.load_products()
+        return cls.products_by_id.get(pk, None)
+
+    @classmethod
+    async def load_products(cls, *args, **kwargs):
+        cls.products_by_id = {}
+        cls.trial_products = []
+        cls.not_trial_products = []
+        async for product in Product.objects.filter(is_active=True):
+            cls.products_by_id[product.pk] = product
+            cls.trial_products.append(product) if product.is_trial else cls.not_trial_products.append(product)

@@ -46,15 +46,6 @@ function sendMessageModalProcess() {
     let closeBtns = modal.querySelectorAll(".close");
     let form = modal.querySelector('#send-message-form');
     let userInput = form.querySelector('input[name="user_id"]');
-    let withLinkSelect = form.querySelector('#id_with_link');
-    let hiddenArea = form.querySelector('#hidden-area-id');
-    withLinkSelect.addEventListener('change', function () {
-        if (this.value === 'True') {
-            hiddenArea.classList.remove('d-none');
-        } else {
-            hiddenArea.classList.add('d-none');
-        }
-    });
     openBtns.forEach((btn) => {
         btn.onclick = function () {
             userInput.value = this.getAttribute("userId");

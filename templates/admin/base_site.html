@@ -6,7 +6,6 @@
     {{ block.super }}
     <link rel="stylesheet" type="text/css" href="{% static 'admin.css' %}">
     <script src="{% static 'admin.js' %}"></script>
-
 {% endblock %}
 {% block title %}Sub Bot{% endblock %}
 {% block header %}
@@ -70,32 +69,18 @@
             <form id="send-message-form" method="POST" action="{% url 'users:send_message' %}">
                 {% csrf_token %}
                 <div class="form-group">
-                    <label for="id_to_users">С ссылкой на оплату?</label>
+                    <label for="id_to_users">Для кого?</label>
                     <select name="to_users" id="id_to_users">
                         <option value="current" selected>Только для этого пользователя</option>
                         <option value="all">Для всех</option>
-                        <option value="all_unsub">Для всех неподписанных</option>
-                        <option value="all_subs">Для всех подписанных</option>
-                        <option value="personal">Для подписчиков на индивидуальные занятие</option>
-                        <option value="group">Для подписчиков на групповые занятие</option>
-                        <option value="speak_club">Для подписчиков разговорного клуба</option>
-                    </select>
-                    <label for="id_with_link">С ссылкой на оплату?</label>
-                    <select name="with_link" id="id_with_link">
-                        <option value="False" selected>Без ссылки</option>
-                        <option value="True">C ссылкой</option>
+                        <option value="all_unsub">Для неподписанных</option>
+                        <option value="all_subs">Для подписанных</option>
+                        <option value="trial">Пробные подписки</option>
+                        <option value="one_month">1 месяц</option>
+                        <option value="three_month">3 месяца</option>
+                        <option value="one_year">Годовики</option>
                     </select>
                 </div>
-                {% comment %}
-                <div id="hidden-area-id" class="form-group d-none">
-                    <label for="product_id">Продукт, к которому нужна ссылка</label>
-                    <select name="product_id" id="product_id">
-                        {% for product in products %}
-                            <option value="{{ product.id }}">{{ product.name }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-                {% endcomment %}
                 <div class="form-group">
                     <label for="message_text_id">Текст сообщения</label>
                     <textarea class="text-input-lg" name="message_text" id="message_text_id"

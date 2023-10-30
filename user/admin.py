@@ -7,7 +7,7 @@ from user.models import User
 @admin.register(User)
 class UserAdmin(admin.ModelAdmin):
     list_display = (
-        'id', 'chat_id', 'username', 'link_', 'last_visit_time', 'registration_datetime',
+        'id', 'chat_id', 'username', 'link_', 'send_message_', 'last_visit_time', 'registration_datetime',
         'first_sub_date', 'state'
     )
     list_filter = (
@@ -28,3 +28,10 @@ class UserAdmin(admin.ModelAdmin):
         )
 
     link_.short_description = 'TG link'
+
+    def send_message_(self, obj):
+        return format_html(
+            f'<button userId={obj.pk} type="button" class="custom-button send-msg-btn">Сообщение</button>'
+        )
+
+    send_message_.short_description = 'Отправить сообщение'

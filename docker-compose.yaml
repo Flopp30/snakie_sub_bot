@@ -5,19 +5,19 @@ services:
   postgres:
     image: postgres
     environment:
-      POSTGRES_PASSWORD: speakypass1
-      POSTGRES_USER: speaky1
-      POSTGRES_DB: speakydb
+      POSTGRES_PASSWORD: snakiepass1
+      POSTGRES_USER: snakie_bot
+      POSTGRES_DB: snakie_db
     volumes:
       - db_data:/var/lib/postgresql/data
       - ./test_data:/test_data
     ports:
       - "127.0.0.1:5432:5432"
 
-  speaky-bot:
+  snakie-bot:
     build:
       context: .
-    image: speaky-django:latest
+    image: snakie-django:latest
     environment:
       DJANGO_SECRET_KEY: "arfdgvds"
       DJ_DEBUG: "False"
@@ -67,13 +67,13 @@ services:
     ports:
       - '8000:80'
     environment:
-      UPSTREAM_SERVER: speaky-admin:8000
+      UPSTREAM_SERVER: snakie-admin:8000
     volumes:
       - ./nginx-templates:/etc/nginx/templates/
       - nginx_assets:/var/www/static/
       - nginx_media:/var/www/media/
     depends_on:
-      - speaky-admin
+      - snakie-admin
 
 
 

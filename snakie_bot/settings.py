@@ -9,42 +9,40 @@ https://docs.djangoproject.com/en/4.1/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.1/ref/settings/
 """
-
+import os
 from pathlib import Path
 from environs import Env
 
 import dj_database_url
 
-env= Env()
+env = Env()
 env.read_env()
 
 BASE_DIR = Path(__file__).resolve().parent.parent
-
 
 SECRET_KEY = 'django-insecure-9jl7kzg2q2-u#aof5c)6db403cw%d8(b)hfj399)k&49dz%u*o'
 
 DEBUG = env.bool('DJ_DEBUG', True)
 
 ALLOWED_HOSTS = env.list('DJ_ALLOWED_HOSTS', ['*'])
-CSRF_TRUSTED_ORIGINS = env.list('DJ_CSRF_TRUSTED_ORIGINS', [])
+CSRF_TRUSTED_ORIGINS = env.list('DJ_CSRF_TRUSTED_ORIGINS', ['https://yookassa.ru/'])
 
 BOT_MODE = env('BOT_MODE', 'polling')
 
 LOG_LEVEL = env.int('LOG_LEVEL', 10)
 
 # Bot definition
-BOT_TOKEN = env('BOT_TOKEN', 1234)
+TELEGRAM_TOKEN = env('BOT_TOKEN', 1234)
 TG_BOT_URL = env('BOT_UTL', 'https://web.telegram.org/k/#@SnackieBirdSubscribeBot')
-TELEGRAM_API_URL = f'https://api.telegram.org/bot{BOT_TOKEN}/'
+TELEGRAM_API_URL = f'https://api.telegram.org/bot{TELEGRAM_TOKEN}/'
 TG_SEND_MESSAGE_URL = TELEGRAM_API_URL + 'sendMessage'
 TG_BAN_URL = TELEGRAM_API_URL + 'kickChatMember'
 TG_UNBAN_URL = TELEGRAM_API_URL + 'unbanChatMember'
 
 # Payment system definition
-YOO_TOKEN = env(
-    'YOO_TOKEN', '123')  # Мой токен
-YOO_SHOP_ID = env('SHOP_ID', '123')  # Мой шоп id
-
+YOO_TOKEN = env('YOO_TOKEN', '123')
+YOO_SHOP_ID = env('SHOP_ID', '123')
+PAYMENT_LINK_TTL = 10  # min
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -78,7 +76,7 @@ ROOT_URLCONF = 'snakie_bot.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [os.path.join(BASE_DIR, "templates")],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -93,7 +91,6 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'snakie_bot.wsgi.application'
 
-
 # Database
 # https://docs.djangoproject.com/en/4.1/ref/settings/#databases
 
@@ -104,7 +101,6 @@ DATABASES = {
         conn_health_checks=True,
     )
 }
-
 
 # Password validation
 # https://docs.djangoproject.com/en/4.1/ref/settings/#auth-password-validators
@@ -124,7 +120,6 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-
 # Internationalization
 # https://docs.djangoproject.com/en/4.1/topics/i18n/
 
@@ -136,13 +131,26 @@ USE_I18N = True
 
 USE_TZ = True
 
-
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.1/howto/static-files/
 
-STATIC_URL = 'static/'
+STATIC_URL = '/static/'
+STATIC_DIR = os.path.join(BASE_DIR, 'static')
+STATICFILES_DIRS = [
+    STATIC_DIR,
+]
+STATIC_ROOT = './assets/'
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# for requests
+HEADERS = {
+    "user-agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36"
+                  "(KHTML, like Gecko) Chrome/109.0.0.0 Safari/537.36",
+    "Accept": "*/*",
+    "Accept-Encoding": "gzip, deflate, br",
+    "Connection": "keep-alive",
+}

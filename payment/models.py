@@ -1,3 +1,5 @@
+import datetime
+
 from django.db import models
 
 from subscription.models import Subscription
@@ -9,6 +11,7 @@ class PaymentStatus(models.TextChoices):
     PENDING = 'pending'
     SUCCEEDED = 'succeeded'
     CANCELED = 'canceled'
+    REFUNDED = 'refunded'
 
 
 class Payment(models.Model):
@@ -71,6 +74,12 @@ class Payment(models.Model):
             'is_refunded',
         )
 
+    def cancelled(self):
+        if self.subscription:
+            self.subscription.is_auto_renew = False
+            self.subscription.is_active = False
+            self.subscription.save()
+
     def __str__(self):
         return f"{self.id}: {self.amount} from {self.user}"
 
@@ -99,6 +108,17 @@ class Refund(models.Model):
     )
     created_at = models.DateTimeField(verbose_name='Дата создания', auto_now_add=True)
     updated_at = models.DateTimeField(verbose_name='Дата обновления', auto_now=True)
+
+    def success(self):
+        self.payment.subscription.is_active = False
+        self.payment.subscription.is_auto_renew = False
+        self.payment.subscription.unsub_date = datetime.datetime.now()
+        self.payment.subscription.save()
+        self.payment.is_refunded = True
+        self.payment.status = PaymentStatus.REFUNDED
+        self.payment.save()
+        self.status = RefundStatus.SUCCEEDED
+        self.save()
 
     def __str__(self):
         return f"Refund for payment {self.payment.id}"
