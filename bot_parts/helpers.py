@@ -31,7 +31,7 @@ async def send_tg_message(
                 chat_id=chat_id,
                 message_id=update.effective_message.message_id
             )
-    except telegram.error.Forbidden:
+    except (telegram.error.Forbidden, telegram.error.BadRequest):
         pass
 
 
