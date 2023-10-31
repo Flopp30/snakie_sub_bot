@@ -8,7 +8,7 @@ from django.conf import settings
 from django.db.models import Q
 from telegram.ext import CallbackContext
 
-from bot_parts.helpers import send_message_to_admins_from_bot
+from bot_parts.helpers import send_message_to_admins_from_bot, send_tg_message
 from bot_parts.keyboards import get_tariff_board
 from bot_parts.models import OwnedChat, SalesInMemory, ContentInMemory, OwnedBotsInMemory, OwnedChatInMemory
 from message_templates.models import MessageTemplatesInMemory
@@ -60,13 +60,18 @@ async def renew_sub_hourly(context: CallbackContext):
             if sub.product.is_trial:
                 key = 'trail_ended'
             else:
-                key = 'auto_payment_error'
+                key = 'not_auto_renew'
 
             default = (
                 "Твоя подписка на клуб закончилась. Ты можешь продлить её самостоятельно, выбрав подходящий тариф"
             )
             mes_text = await MessageTemplatesInMemory.aget(key, default=default)
-            await context.bot.send_message(sub.user.chat_id, text=mes_text, reply_markup=get_tariff_board())
+            await send_tg_message(
+                chat_id=sub.user.chat_id,
+                message=mes_text,
+                keyboard=get_tariff_board(),
+                context=context
+            )
 
     if inactivated_subs:
         await Subscription.objects.abulk_update(inactivated_subs, ['is_active', 'is_auto_renew'])
@@ -79,7 +84,7 @@ async def ban_user_in_owned_bots(user_chat_id, bot_context):
         Ban user's in owned bots
     """
     owned_bots = await OwnedBotsInMemory.abots()
-    async for owned_bot in owned_bots:
+    for owned_bot in owned_bots:
         ban_url = owned_bot.get_ban_url(user_id=user_chat_id)
         async with aiohttp.ClientSession() as aio_session:
             response = await aio_session.get(ban_url, headers=settings.HEADERS)
@@ -98,7 +103,7 @@ async def ban_user_in_owned_bots(user_chat_id, bot_context):
     tasks = []
     owned_chats = await OwnedChatInMemory.achats()
     async with aiohttp.ClientSession() as aio_session:
-        async for chat in owned_chats:
+        for chat in owned_chats:
             task = asyncio.create_task(kick_chat_member(chat, aio_session, user_chat_id, bot_context))
             tasks.append(task)
         await asyncio.gather(*tasks)
@@ -139,19 +144,21 @@ async def send_reminders_notification(context: CallbackContext):
     updated_users = []
     async for user in one_day_users:
         if user.chat_id > 0:
-            await context.bot.send_message(
+            await send_tg_message(
                 chat_id=user.chat_id,
-                text=await MessageTemplatesInMemory.aget('text_one_day_notification'),
-                reply_markup=tariff_board
+                message=await MessageTemplatesInMemory.aget('text_one_day_notification'),
+                keyboard=tariff_board,
+                context=context
             )
             user.state = 'TARIFF_CHOICE'
             updated_users.append(user)
     async for user in five_day_users:
         if user.chat_id > 0:
-            await context.bot.send_message(
+            await send_tg_message(
                 chat_id=user.chat_id,
-                text=await MessageTemplatesInMemory.aget('text_five_day_notification'),
-                reply_markup=tariff_board
+                message=await MessageTemplatesInMemory.aget('text_five_day_notification'),
+                keyboard=tariff_board,
+                context=context
             )
             user.state = 'TARIFF_CHOICE'
             updated_users.append(user)

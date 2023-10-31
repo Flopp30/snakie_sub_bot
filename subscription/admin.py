@@ -7,7 +7,7 @@ from subscription.models import Subscription
 @admin.register(Subscription)
 class SubscriptionAdmin(admin.ModelAdmin):
     list_display = (
-        'id', 'user_', 'start_date', 'unsub_date', 'is_active', 'is_auto_renew', 'product',
+        'id', 'is_active', 'is_auto_renew', 'start_date', 'unsub_date', 'user_', 'product',
         'payment_amount', 'payment_currency'
     )
     list_filter = (

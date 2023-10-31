@@ -1,11 +1,38 @@
 from datetime import datetime
 
+import telegram
 from dateutil.relativedelta import relativedelta
 from django.utils import timezone
+from telegram import Update
 from telegram.ext import ContextTypes
 
 from product.models import ProductsInMemory
 from user.models import User
+
+
+async def send_tg_message(
+        context: ContextTypes.DEFAULT_TYPE,
+        chat_id,
+        message,
+        parse_mode='HTML',
+        update: Update = None,
+        keyboard=None,
+        delete_from=False
+):
+    try:
+        await context.bot.send_message(
+            chat_id,
+            message,
+            parse_mode,
+            reply_markup=keyboard
+        )
+        if delete_from and update:
+            await context.bot.delete_message(
+                chat_id=chat_id,
+                message_id=update.effective_message.message_id
+            )
+    except telegram.error.Forbidden:
+        pass
 
 
 def chat_is_private(update: ContextTypes.DEFAULT_TYPE) -> bool:

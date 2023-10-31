@@ -12,28 +12,33 @@ from utils.helpers import get_tg_payload
 
 class SendMessageView(View):
     return_url = '/user/user/'
-    error_message = '{success_counter} сообщений отправлено успешно. {error_counter} - не отправлены'
-    success_message = '{success_counter} сообщений отправлены успешно'
+    report_message = (
+        '{success_counter} сообщений отправлено успешно. '
+        '{error_counter} - не отправлены. '
+        '{block_counter} - бот заблокирован.'
+    )
 
-    async def post(self, request, **kwargs):
+    def post(self, request, **kwargs):
         to_users = request.POST.get('to_users')
         user_pk = request.POST.get('user_id')
-        error_counter, success_counter = 0, 0
+        error_counter, success_counter, block_counter = 0, 0, 0
         users = self.get_users(to_users, user_pk)
         text = request.POST.get('message_text')
-        async for user in users:
+        for user in users:
             payload = get_tg_payload(chat_id=user.chat_id, message_text=text)
             response = requests.post(settings.TG_SEND_MESSAGE_URL, json=payload)
             if response.status_code == 200:
                 success_counter += 1
+            elif response.status_code == 403:
+                block_counter += 1
             else:
                 error_counter += 1
-        if error_counter:
-            mes_text = self.error_message.format(error_counter=error_counter, success_counter=success_counter)
-            messages.add_message(request, messages.INFO, mes_text)
-        else:
-            mex_text = self.success_message.format(success_counter=success_counter)
-            messages.add_message(request, messages.SUCCESS, mex_text)
+        report_mes = self.report_message.format(
+            success_counter=success_counter,
+            error_counter=error_counter,
+            block_counter=block_counter
+        )
+        messages.add_message(request, messages.SUCCESS, report_mes)
         return redirect(self.return_url)
 
     @staticmethod

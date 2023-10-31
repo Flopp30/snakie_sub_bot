@@ -12,8 +12,13 @@ class PaymentAdmin(admin.ModelAdmin):
         'id', 'status', 'user_', 'amount', 'currency', 'payment_service', 'refund_', 'created_at',
         'updated_at',
     )
-    list_select_related = 'user', 'refund'
-    list_filter = ('created_at', 'updated_at', 'currency', 'payment_service')
+    list_select_related = 'user', 'refund', 'subscription', 'subscription__product'
+    list_filter = (
+        'status',
+        'subscription__product__displayed_name',
+        'created_at',
+        'updated_at',
+    )
     ordering = ('-pk', 'created_at', 'updated_at', 'user__username')
     list_per_page = 20
     search_fields = ('id', 'status', 'payment_service_id', 'payment_service', 'amount', 'currency', 'user__username')

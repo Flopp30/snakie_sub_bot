@@ -1,0 +1,19 @@
+version: "3.7"
+
+services:
+
+  postgres:
+    image: postgres
+    environment:
+      POSTGRES_PASSWORD: snakiepass1
+      POSTGRES_USER: snakie
+      POSTGRES_DB: snakie_db
+    volumes:
+      - db_data:/var/lib/postgresql/data
+      - ./test_data:/test_data
+    ports:
+      - "127.0.0.1:5440:5432"
+
+
+volumes:
+  db_data:

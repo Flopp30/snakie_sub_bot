@@ -1,6 +1,7 @@
 import logging
 from datetime import timedelta
 
+import telegram
 from django.conf import settings
 from django.core.management import BaseCommand
 from telegram import Update
@@ -14,7 +15,8 @@ from telegram.ext import (
     PrefixHandler
 )
 
-from bot_parts.helpers import check_bot_context, get_tariffs_text, chat_is_private, get_beautiful_sub_date
+from bot_parts.helpers import check_bot_context, get_tariffs_text, chat_is_private, get_beautiful_sub_date, \
+    send_tg_message
 from bot_parts.keyboards import START_BOARD, get_tariff_board, get_payment_board, UNSUB_BOARD, get_content_board
 from bot_parts.models import SalesInMemory, ContentInMemory, OwnedBotsInMemory, OwnedChatInMemory
 from message_templates.models import MessageTemplatesInMemory
@@ -35,57 +37,50 @@ class Command(BaseCommand):
 
 
 async def help_(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    chat_id = update.effective_chat.id
     await check_bot_context(update, context)
     text = await MessageTemplatesInMemory.aget('help')
-    await context.bot.send_message(
-        chat_id,
-        text=text,
-        parse_mode='HTML',
-    )
-    await context.bot.delete_message(
-        chat_id=chat_id,
-        message_id=update.effective_message.message_id
+    await send_tg_message(
+        chat_id=update.effective_chat.id,
+        context=context,
+        message=text,
+        update=update,
+        delete_from=True
     )
     context.user_data['user'].state = 'HELP'
     return 'HELP'
 
 
 async def start(update, context):
-    chat_id = update.effective_chat.id
     await check_bot_context(update, context, force_update=True)
     user = context.user_data['user']
+    keyboard = None
     if user.active_subscription:
-        await context.bot.send_message(
-            chat_id,
-            text=(await MessageTemplatesInMemory.aget('start_is_active')).format(
-                first_sub_date=user.first_sub_date.strftime("%d.%m.%Y"),
-                product_displayed_name=user.active_subscription.product.displayed_name,
-                unsub_date=user.active_subscription.unsub_date.strftime("%d.%m.%Y"),
-                sub_date_text=get_beautiful_sub_date(user.first_sub_date)
-            ),
-            parse_mode='HTML',
-            reply_markup=await get_content_board()
+        keyboard = await get_content_board()
+        mes_text = (await MessageTemplatesInMemory.aget('start_is_active')).format(
+            first_sub_date=user.first_sub_date.strftime("%d.%m.%Y"),
+            product_displayed_name=user.active_subscription.product.displayed_name,
+            unsub_date=user.active_subscription.unsub_date.strftime("%d.%m.%Y"),
+            sub_date_text=get_beautiful_sub_date(user.first_sub_date)
         )
+        STATE = 'START'
     elif not sales_is_available(user):
-        await context.bot.send_message(
-            chat_id,
-            text=await MessageTemplatesInMemory.aget('no_sale'),
-            parse_mode='HTML',
-        )
+        mes_text = await MessageTemplatesInMemory.aget('no_sale')
+        STATE = 'START'
     else:
-        await context.bot.send_message(
-            chat_id,
-            text=await MessageTemplatesInMemory.aget('start'),
-            parse_mode='HTML',
-            reply_markup=START_BOARD,
-        )
-    await context.bot.delete_message(
-        chat_id=chat_id,
-        message_id=update.effective_message.message_id
+        mes_text = await MessageTemplatesInMemory.aget('start')
+        keyboard = START_BOARD
+        STATE = 'WELCOME_CHOICE'
+
+    await send_tg_message(
+        chat_id=update.effective_chat.id,
+        context=context,
+        message=mes_text,
+        keyboard=keyboard,
+        update=update,
+        delete_from=True
     )
-    context.user_data['user'].state = 'WELCOME_CHOICE'
-    return 'WELCOME_CHOICE'
+    context.user_data['user'].state = STATE
+    return STATE
 
 
 async def handle_welcome_choice(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -93,11 +88,11 @@ async def handle_welcome_choice(update: Update, context: ContextTypes.DEFAULT_TY
     if not update.callback_query:
         return 'WELCOME_CHOICE'
     text = (await MessageTemplatesInMemory.aget('tariffs')) + get_tariffs_text()
-    await context.bot.send_message(
-        update.effective_chat.id,
-        text=text,
-        parse_mode='HTML',
-        reply_markup=get_tariff_board(),
+    await send_tg_message(
+        chat_id=update.effective_chat.id,
+        context=context,
+        message=text,
+        keyboard=get_tariff_board()
     )
     context.user_data['user'].state = 'TARIFF_CHOICE'
     return 'TARIFF_CHOICE'
@@ -106,18 +101,22 @@ async def handle_welcome_choice(update: Update, context: ContextTypes.DEFAULT_TY
 async def handle_tariffs_choice(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not update.callback_query.data:
         return 'TARIFF_CHOICE'
-    chat_id = update.effective_chat.id
     await check_bot_context(update, context)
     product = await ProductsInMemory.get(int(update.callback_query.data))
     payment_url = await create_payment(product, context.user_data['user'])
-    await context.bot.send_message(
-        chat_id,
-        text=(await MessageTemplatesInMemory.aget('text_with_payload_link')).format(time=settings.PAYMENT_LINK_TTL),
-        parse_mode='HTML',
-        reply_markup=get_payment_board(
-            button_text=f'Оплатить {product.amount} {product.currency}',
-            payment_url=payment_url
-        )
+
+    mes_text = (
+        await MessageTemplatesInMemory.aget('text_with_payload_link', default='У тебя есть {time} для оплаты')
+    ).format(time=settings.PAYMENT_LINK_TTL)
+    keyboard = get_payment_board(
+        button_text=f'Оплатить {product.amount} {product.currency}',
+        payment_url=payment_url
+    )
+    await send_tg_message(
+        chat_id=update.effective_chat.id,
+        context=context,
+        message=mes_text,
+        keyboard=keyboard
     )
     return 'START'
 
@@ -127,46 +126,46 @@ async def unsubscribe_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await check_bot_context(update, context)
     active_sub = context.user_data['user'].active_subscription
     if not active_sub:
-        await context.bot.send_message(
-            chat_id,
-            text='У тебя нет активных подписок',
-            parse_mode='HTML',
+        await send_tg_message(
+            chat_id=update.effective_chat.id,
+            context=context,
+            message='У тебя нет активных подписок',
         )
         return 'START'
 
     if not active_sub.is_auto_renew:
-        await context.bot.send_message(
-            chat_id,
-            text=(f'Текущая подписка завершится {active_sub.unsub_date.strftime("%d.%m.%Y")}'
-                  ' и автоматически продлеваться не будет'),
-            parse_mode='HTML',
+        await send_tg_message(
+            chat_id=update.effective_chat.id,
+            context=context,
+            message=(f'Текущая подписка завершится {active_sub.unsub_date.strftime("%d.%m.%Y")}'
+                     ' и автоматически продлеваться не будет'),
         )
         return 'START'
+    mes_text = (
+        await MessageTemplatesInMemory.aget('unsub_confirmation', default='{unsub_date} - дата окончания подписки')
+    ).format(unsub_date=active_sub.unsub_date.strftime('%d.%m.%Y'))
 
-    await context.bot.send_message(
-        chat_id,
-        text=(await MessageTemplatesInMemory.aget('unsub_confirmation')).format(
-            unsub_date=active_sub.unsub_date.strftime('%d.%m.%Y')),
-        parse_mode='HTML',
-        reply_markup=UNSUB_BOARD
+    await send_tg_message(
+        chat_id=update.effective_chat.id,
+        context=context,
+        message=mes_text,
+        keyboard=UNSUB_BOARD
     )
     return 'UNSUB_CHOICE'
 
 
 async def handle_unsub_choice(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    chat_id = update.effective_chat.id
     await check_bot_context(update, context)
-    mes_text = None
     if update.callback_query.data == 'unsub_confirmed':
         active_sub = context.user_data['user'].active_subscription
         active_sub.is_auto_renew = False
         await active_sub.asave()
     mes_text = await MessageTemplatesInMemory.aget(update.callback_query.data)
     if mes_text:
-        await context.bot.send_message(
-            chat_id,
-            text=mes_text,
-            parse_mode='HTML',
+        await send_tg_message(
+            chat_id=update.effective_chat.id,
+            context=context,
+            message=mes_text
         )
     return 'START'
 
@@ -207,9 +206,10 @@ async def reload_from_db(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await check_bot_context(update, context)
         if context.user_data['user'].is_superuser:
             await reload_in_memory_data()
-            await context.bot.send_message(
+            await send_tg_message(
                 chat_id=update.effective_chat.id,
-                text='Продукты, сообщения и даты продаж обновлены успешно',
+                context=context,
+                message='Продукты, сообщения и даты продаж обновлены успешно'
             )
 
 

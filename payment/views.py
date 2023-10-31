@@ -155,7 +155,6 @@ class YooPaymentCallBackView(View):
                     "Если все еще не получится - пиши мне в личку @snackiebird1"
                 )
             text = MessageTemplatesInMemory.get('payment_error', default=default)
-            ban_user_in_owned_bots(payment.user.chat_id)
         buttons = []
         for product in Product.objects.filter(is_active=True).order_by('amount'):
             buttons.append({

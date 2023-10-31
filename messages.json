@@ -126,5 +126,13 @@
       "name": "start_is_active",
       "content": "В клубе с {first_sub_date}\nТип подписки: {product_displayed_name}\nДата следующего списания: {unsub_date}\nТы с нами уже: {sub_date_text}"
     }
+  },
+  {
+    "model": "message_templates.Template",
+    "pk": 17,
+    "fields": {
+      "name": "not_auto_renew",
+      "content": "Срок твоей подписки закончился и ты отказалась от автопродления.\nНадеюсь, тебе очень понравилось у нас в клубе.\nТы можешь возобновить подписку самостоятельно, выбрав подходящий тариф:"
+    }
   }
 ]

@@ -46,9 +46,7 @@ class User(models.Model):
 
     @property
     def link(self):
-        return (
-            f"https://web.telegram.org/#{self.chat_id}"
-        )
+        return f"https://t.me/{self.username}" if self.username else f"https://web.telegram.org/k/#{self.chat_id}"
 
     class Meta:
         verbose_name = 'Пользователь'

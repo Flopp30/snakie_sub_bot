@@ -6,7 +6,7 @@ services:
     image: postgres
     environment:
       POSTGRES_PASSWORD: snakiepass1
-      POSTGRES_USER: snakie_bot
+      POSTGRES_USER: snakie
       POSTGRES_DB: snakie_db
     volumes:
       - db_data:/var/lib/postgresql/data
@@ -21,23 +21,24 @@ services:
     environment:
       DJANGO_SECRET_KEY: "arfdgvds"
       DJ_DEBUG: "False"
-      TG_TOKEN: ""
-
+      TG_TOKEN: "66219517763:AAHlNZONDS3fmRmMbWF0-w0qlhD3fePbg3A"
+      YOO_TOKEN: "live_WwEAUTuttMECDAn9nx-MBAyAT0jv7GsLQkqkS9vUnp4"
+      SHOP_ID: "215494"
+      DJ_DB_URL: 'postgres://snakie:snakiepass1@postgres:5432/snakie_db'
     depends_on:
       - postgres
-
     command:
       - sh
       - -c
       - |
         python manage.py migrate --noinput
-        python manage.py loaddata initial.json
+        python manage.py loaddata db_dump.json
         python manage.py async_bot
 
   speaky-admin:
     build:
       context: .
-    image: speaky-django:latest
+    image: snakie-django:latest
     ports:
       - 8000
     volumes:
@@ -47,14 +48,16 @@ services:
     environment:
       DJANGO_SECRET_KEY: "arfdgvds"
       DJ_DEBUG: "True"
-      DJ_ALLOWED_HOSTS: '127.0.0.1,localhost,flopp.ru'
-      DJ_CSRF_TRUSTED_ORIGINS: 'http://127.0.0.1:8000,https://flopp.ru'
-      DJ_DB_URL: 'postgres://speaky1:speakypass1@postgres:5432/speakydb'
+      DJ_ALLOWED_HOSTS: '127.0.0.1,localhost,snakiesub.ru'
+      DJ_CSRF_TRUSTED_ORIGINS: 'http://127.0.0.1:8000,https://snakiesub.ru'
       MEDIA_ROOT: '/var/www/media'
-
+      TG_TOKEN: "66219517763:AAHlNZONDS3fmRmMbWF0-w0qlhD3fePbg3A"
+      YOO_TOKEN: "live_WwEAUTuttMECDAn9nx-MBAyAT0jv7GsLQkqkS9vUnp4"
+      SHOP_ID: "215494"
+      DJ_DB_URL: 'postgres://snakie:snakiepass1@postgres:5432/snakie_db'
     depends_on:
       - postgres
-
+      - snakie-bot
     command:
       - sh
       - -c
