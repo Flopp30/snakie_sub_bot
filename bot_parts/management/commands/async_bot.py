@@ -46,8 +46,8 @@ async def help_(update: Update, context: ContextTypes.DEFAULT_TYPE):
         update=update,
         delete_from=True
     )
-    context.user_data['user'].state = 'HELP'
-    return 'HELP'
+    context.user_data['user'].state = 'START'
+    return 'START'
 
 
 async def start(update, context):
@@ -179,12 +179,12 @@ async def user_input_handler(update: Update, context: ContextTypes.DEFAULT_TYPE)
             user_reply = update.callback_query.data
         else:
             return
-        if user_reply.lower() == '/help':
-            user_state = 'HELP'
-        elif user_reply.lower() == 'отписаться':
-            user_state = context.user_data['user'].state = 'UNSUB_START'
+        if user_reply.lower() == 'отписаться':
+            user_state = 'UNSUB_START'
         elif user_reply == '/start' or not sales_is_available(context.user_data['user']):
             user_state = 'START'
+        elif user_reply.lower() == '/help':
+            user_state = 'HELP'
         else:
             user_state = context.user_data['user'].state or 'START'
         states_function = {
