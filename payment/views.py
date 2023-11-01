@@ -53,6 +53,7 @@ class YooPaymentCallBackView(View):
                     payment = (
                         Payment.objects
                         .select_related('user', 'subscription')
+                        .prefetch_related('user__subscriptions')
                         .get(
                             payment_service='YooKassa',
                             payment_service_id=str(returned_obj.get('id')),
@@ -131,16 +132,13 @@ class YooPaymentCallBackView(View):
         subscription.save()
         payment.save()
         self.send_tg_message(payload)
-
-        admins_text = (f"Поступил платеж {payment.amount} {payment.currency} от @{subscription.user.username}")
-        send_tg_message_to_admins_from_django(admins_text)
         unban_user_in_owned_bots(payment.user.chat_id)
 
     def process_payment_canceled(self, payment, returned_obj):
         payment.status = PaymentStatus.CANCELED
         is_auto_payment = returned_obj.get('metadata', {}).get('auto_payment') == "true"
-        payment.user.state = 'TARIFF_CHOICE'
         payment.cancelled()
+        payment.save()
         if is_auto_payment:
             default = (
                     "Упс, что-то пошло не так!\nМы не смогли продлить твою подписку в клубе. Возможно, "
@@ -149,20 +147,23 @@ class YooPaymentCallBackView(View):
             text = MessageTemplatesInMemory.get('auto_payment_error', default=default)
             ban_user_in_owned_bots(payment.user.chat_id)
         else:
+            if payment.user.subscriptions.filter(is_active=True).exists():
+                return
             default = (
                     "Упс, что-то пошло не так!\n"
                     "Не получилось создать твою подписку в клуб. Попробуй оплатить через 5-10 минут.\n"
                     "Если все еще не получится - пиши мне в личку @snackiebird1"
                 )
             text = MessageTemplatesInMemory.get('payment_error', default=default)
+
+        payment.user.state = 'TARIFF_CHOICE'
+        payment.user.save()
         buttons = []
         for product in Product.objects.filter(is_active=True).order_by('amount'):
             buttons.append({
                 f"{product.payment_name}, {product.amount} {product.currency}": product.pk
             })
         payload = get_tg_payload_with_callbacks(chat_id=payment.user.chat_id, message_text=text, buttons=buttons)
-        payment.save()
-        payment.user.save()
         self.send_tg_message(payload)
 
     def process_refund(self, returned_obj):

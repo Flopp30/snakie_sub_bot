@@ -42,7 +42,7 @@ TG_UNBAN_URL = TELEGRAM_API_URL + 'unbanChatMember'
 # Payment system definition
 YOO_TOKEN = env('YOO_TOKEN', '123')
 YOO_SHOP_ID = env('SHOP_ID', '123')
-PAYMENT_LINK_TTL = 10  # min
+PAYMENT_LINK_TTL = 60  # min
 
 INSTALLED_APPS = [
     'django.contrib.admin',

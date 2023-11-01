@@ -38,7 +38,7 @@ class Command(BaseCommand):
 
 async def help_(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await check_bot_context(update, context)
-    text = await MessageTemplatesInMemory.aget('help')
+    text = (await MessageTemplatesInMemory.aget('help')).format(user_id=context.user_data['user'].chat_id)
     await send_tg_message(
         chat_id=update.effective_chat.id,
         context=context,
@@ -179,7 +179,9 @@ async def user_input_handler(update: Update, context: ContextTypes.DEFAULT_TYPE)
             user_reply = update.callback_query.data
         else:
             return
-        if user_reply.lower() == 'отписаться':
+        if user_reply.lower() == '/help':
+            user_state = 'HELP'
+        elif user_reply.lower() == 'отписаться':
             user_state = context.user_data['user'].state = 'UNSUB_START'
         elif user_reply == '/start' or not sales_is_available(context.user_data['user']):
             user_state = 'START'

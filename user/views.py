@@ -1,3 +1,6 @@
+import asyncio
+
+import aiohttp
 import requests
 from django.conf import settings
 from django.contrib import messages
@@ -17,29 +20,41 @@ class SendMessageView(View):
         '{error_counter} - не отправлены. '
         '{block_counter} - бот заблокирован.'
     )
+    error_counter = 0
+    block_counter = 0
+    success_counter = 0
 
-    def post(self, request, **kwargs):
+    async def post(self, request, **kwargs):
         to_users = request.POST.get('to_users')
         user_pk = request.POST.get('user_id')
-        error_counter, success_counter, block_counter = 0, 0, 0
         users = self.get_users(to_users, user_pk)
         text = request.POST.get('message_text')
-        for user in users:
-            payload = get_tg_payload(chat_id=user.chat_id, message_text=text)
-            response = requests.post(settings.TG_SEND_MESSAGE_URL, json=payload)
-            if response.status_code == 200:
-                success_counter += 1
-            elif response.status_code == 403:
-                block_counter += 1
-            else:
-                error_counter += 1
+        tasks = []
+        async with aiohttp.ClientSession() as session:
+            async for user in users:
+                payload = get_tg_payload(chat_id=user.chat_id, message_text=text)
+                tasks.append(asyncio.create_task(self.send_message(session, payload)))
+
+            await asyncio.gather(*tasks)
         report_mes = self.report_message.format(
-            success_counter=success_counter,
-            error_counter=error_counter,
-            block_counter=block_counter
+            success_counter=self.success_counter,
+            error_counter=self.error_counter,
+            block_counter=self.block_counter
         )
         messages.add_message(request, messages.SUCCESS, report_mes)
         return redirect(self.return_url)
+
+    async def send_message(self, session, payload):
+        response = await session.post(
+            settings.TG_SEND_MESSAGE_URL,
+            json=payload
+        )
+        if response.status == 200:
+            self.success_counter += 1
+        elif response.status == 403:
+            self.block_counter += 1
+        else:
+            self.error_counter += 1
 
     @staticmethod
     def get_users(field_value, pk=None):
