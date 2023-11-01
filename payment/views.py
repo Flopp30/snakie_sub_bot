@@ -48,19 +48,25 @@ class YooPaymentCallBackView(View):
                     return JsonResponse({"status": "success"})
 
             case "payment.succeeded" | "payment.canceled":
-                try:
-                    sleep(1)
-                    payment = (
-                        Payment.objects
-                        .select_related('user', 'subscription')
-                        .prefetch_related('user__subscriptions')
-                        .get(
-                            payment_service='YooKassa',
-                            payment_service_id=str(returned_obj.get('id')),
-                            status=PaymentStatus.PENDING,
+                counter = 0
+                payment = None
+                while counter < 5:
+                    counter += 1
+                    try:
+                        sleep(1)
+                        payment = (
+                            Payment.objects
+                            .select_related('user', 'subscription')
+                            .prefetch_related('user__subscriptions')
+                            .get(
+                                payment_service='YooKassa',
+                                payment_service_id=str(returned_obj.get('id')),
+                                status=PaymentStatus.PENDING,
+                            )
                         )
-                    )
-                except Payment.DoesNotExist:
+                    except Payment.DoesNotExist:
+                        pass
+                if not payment:
                     logger.error(f'Платеж не найден {returned_obj}')
                     return JsonResponse({"status": "success"})
 
