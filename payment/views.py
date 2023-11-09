@@ -48,9 +48,10 @@ class YooPaymentCallBackView(View):
                     return JsonResponse({"status": "success"})
 
             case "payment.succeeded" | "payment.canceled":
+                # BAD CODE AREA :)
                 counter = 0
                 payment = None
-                while counter < 5:
+                while counter < 5:  # TODO Fix fast response from yookassa.
                     counter += 1
                     try:
                         sleep(1)
@@ -69,7 +70,7 @@ class YooPaymentCallBackView(View):
                 if not payment:
                     logger.error(f'Платеж не найден {returned_obj}')
                     return JsonResponse({"status": "success"})
-
+                # END BAD CODE AREA
                 if event == "payment.succeeded":
                     self.process_payment_success(
                         payment=payment,
@@ -206,7 +207,6 @@ class RefundCreateView(View):
     error_message = 'Что-то пошло не так. Попробуйте перезагрузить страницу и повторите попытку'
     refund_already_exist_message = 'Возврат уже был создан ранее. Обратитесь в YooKassa за уточнением'
     success_message = 'Возврат успешно создан'
-    # 2023-10-29 16:40:48.224038
 
     def post(self, request, **kwargs):
         payment_id = request.POST.get('payment_id')

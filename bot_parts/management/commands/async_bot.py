@@ -122,7 +122,6 @@ async def handle_tariffs_choice(update: Update, context: ContextTypes.DEFAULT_TY
 
 
 async def unsubscribe_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    chat_id = update.effective_chat.id
     await check_bot_context(update, context)
     active_sub = context.user_data['user'].active_subscription
     if not active_sub:
@@ -251,7 +250,7 @@ def main():
     application.add_handler(MessageHandler(filters.TEXT, user_input_handler))
 
     try:
-        if settings.BOT_MODE == 'webhook':
+        if settings.BOT_MODE == 'webhook':  # unused, may be required in future
             logger.warning('Bot started in WEBHOOK mode')
             application.run_webhook(
                 listen="0.0.0.0",

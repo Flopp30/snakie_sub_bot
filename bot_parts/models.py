@@ -55,6 +55,7 @@ class OwnedBotsInMemory:
 
     @classmethod
     def bots(cls):
+        # TODO remove all sync methods, when will you transfer payment views to async
         if not cls._bots:
             cls.reload_bots()
         return cls._bots

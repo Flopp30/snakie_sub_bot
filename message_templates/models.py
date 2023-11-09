@@ -25,6 +25,7 @@ class MessageTemplatesInMemory:
 
     @classmethod
     def get(cls, key, default=None):
+        # TODO remove both sync methods, when will you transfer payment views to async
         if not cls.templates:
             cls.load_templates()
         if not default:

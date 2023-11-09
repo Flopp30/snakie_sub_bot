@@ -19,6 +19,9 @@ async def send_tg_message(
         keyboard=None,
         delete_from=False
 ):
+    """
+        Send message from bot
+    """
     try:
         await context.bot.send_message(
             chat_id,
@@ -36,11 +39,17 @@ async def send_tg_message(
 
 
 def chat_is_private(update: ContextTypes.DEFAULT_TYPE) -> bool:
+    """
+        avoid not private messages (administered chats)
+    """
     message = update.message if update.message else update.callback_query.message
     return message.chat.type == 'private'
 
 
 async def check_bot_context(update, context, force_update: bool = False):
+    """
+        Add user and sub state in context
+    """
     if not chat_is_private(update):
         return
     if not context.user_data.get('user') or force_update:
@@ -56,6 +65,9 @@ async def check_bot_context(update, context, force_update: bool = False):
 
 
 def get_tariffs_text() -> str:
+    """
+        Машина фитнеса - 1 месяц, <s>2000</s> 1800 RUB
+    """
     result = ''
     prep_text = (
         '{displayed_name} - {period_name}, <s>{crossed_out_price}</s> {payment_amount} {payment_currency}\n'
@@ -95,7 +107,7 @@ def get_tariffs_text() -> str:
 
 def get_beautiful_sub_date(first_sub_date: datetime) -> str | None:
     """
-        Gives statistics of the format: "Ты с нами уже 2 часа 15 мин"
+        Returns "2 часа 15 мин", example usage: "Ты с нами уже: ..."
     """
     current_date = timezone.now()
     date_diff = relativedelta(current_date, first_sub_date)

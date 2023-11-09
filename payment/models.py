@@ -59,21 +59,6 @@ class Payment(models.Model):
 
     is_refunded = models.BooleanField(verbose_name='Возвращен?', default=False)
 
-    @classmethod
-    def fields_to_report(cls):
-        return (
-            'id',
-            'status',
-            'payment_service',
-            'amount',
-            'currency',
-            'created_at',
-            'updated_at',
-            'user',
-            'subscription',
-            'is_refunded',
-        )
-
     def cancelled(self):
         if self.subscription:
             self.subscription.is_auto_renew = False
