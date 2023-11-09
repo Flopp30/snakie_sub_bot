@@ -131,6 +131,9 @@ async def kick_chat_member(chat: OwnedChat, aio_session, user_chat_id, bot_conte
 
 
 async def send_reminders_notification(context: CallbackContext):
+    await SalesInMemory.update_sales_is_available()
+    if not SalesInMemory.is_available:
+        return
     now = datetime.now()
     tariff_board = get_tariff_board()
     one_day_users = User.objects.prefetch_related('subscriptions').filter(
