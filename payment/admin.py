@@ -1,7 +1,10 @@
+from datetime import datetime
+
 from dateutil.relativedelta import relativedelta
 from django.contrib import admin
 from django.utils import timezone
 from django.utils.html import format_html
+from rangefilter.filters import DateRangeQuickSelectListFilterBuilder
 
 from payment.models import Payment, Refund, PaymentStatus
 
@@ -16,8 +19,22 @@ class PaymentAdmin(admin.ModelAdmin):
     list_filter = (
         'status',
         'subscription__product__displayed_name',
-        'created_at',
-        'updated_at',
+        (
+            "created_at",
+            DateRangeQuickSelectListFilterBuilder(
+                title="Создан",
+                default_start=datetime.now(),
+                default_end=datetime.now(),
+            ),
+        ),
+        (
+            "updated_at",
+            DateRangeQuickSelectListFilterBuilder(
+                title="Обновлен",
+                default_start=datetime.now(),
+                default_end=datetime.now(),
+            ),
+        ),
     )
     ordering = ('-pk', 'created_at', 'updated_at', 'user__username')
     list_per_page = 20

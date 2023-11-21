@@ -1,5 +1,8 @@
+from datetime import datetime
+
 from django.contrib import admin
 from django.utils.html import format_html
+from rangefilter.filters import DateRangeQuickSelectListFilterBuilder
 
 from subscription.models import Subscription
 
@@ -11,9 +14,25 @@ class SubscriptionAdmin(admin.ModelAdmin):
         'payment_amount', 'payment_currency'
     )
     list_filter = (
-        'start_date',
-        'unsub_date',
-        'is_auto_renew'
+        (
+            "start_date",
+            DateRangeQuickSelectListFilterBuilder(
+                title="Дата начала подписки",
+                default_start=datetime.now(),
+                default_end=datetime.now(),
+            ),
+        ),
+        (
+            "unsub_date",
+            DateRangeQuickSelectListFilterBuilder(
+                title="Дата окончания подписки подписки",
+                default_start=datetime.now(),
+                default_end=datetime.now(),
+            ),
+        ),
+        'is_auto_renew',
+        'is_active',
+        'product',
     )
     ordering = ('-id', '-unsub_date', '-start_date')
     list_per_page = 20

@@ -49,6 +49,10 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
 
+    # custom
+    # https://github.com/silentsokolov/django-admin-rangefilter
+    "rangefilter",
+
     # bot
     'user',
     'payment',
