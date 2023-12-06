@@ -10,10 +10,19 @@ from subscription.models import Subscription
 @admin.register(Subscription)
 class SubscriptionAdmin(admin.ModelAdmin):
     list_display = (
-        'id', 'is_active', 'is_auto_renew', 'start_date', 'unsub_date', 'user_', 'product',
+        'id', 'is_active', 'is_auto_renew', 'first_sub_', 'start_date', 'unsub_date', 'user_',
+        'product',
         'payment_amount', 'payment_currency'
     )
     list_filter = (
+        (
+            "user__first_sub_date",
+            DateRangeQuickSelectListFilterBuilder(
+                title="Дата первой подписки",
+                default_start=datetime.now(),
+                default_end=datetime.now(),
+            ),
+        ),
         (
             "start_date",
             DateRangeQuickSelectListFilterBuilder(
@@ -47,3 +56,9 @@ class SubscriptionAdmin(admin.ModelAdmin):
         )
 
     user_.short_description = 'TG link'
+
+    def first_sub_(self, obj):
+        return obj.user.first_sub_date
+
+    first_sub_.short_description = 'Дата первой подписки'
+    first_sub_.admin_order_field = 'user__first_sub_date'
