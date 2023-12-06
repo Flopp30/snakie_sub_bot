@@ -116,7 +116,8 @@ class YooPaymentCallBackView(View):
         else:
             subscription.verified_payment_id = returned_obj.get('payment_method', {}).get('id', None)
             payment.subscription = subscription
-            subscription.user.first_sub_date = datetime.datetime.now()
+            if not subscription.user.first_sub_date:
+                subscription.user.first_sub_date = datetime.datetime.now()
             subscription.user.save()
             payment.subscription.save()
             default = (
