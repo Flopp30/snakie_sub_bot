@@ -54,7 +54,7 @@ class SubscriptionAdmin(admin.ModelAdmin):
     ordering = ('-id', '-unsub_date', '-start_date')
     list_per_page = 20
     list_select_related = ['user', 'product']
-    search_fields = ('payment_amount', 'id')
+    search_fields = ('payment_amount', 'id', 'user__username', "user__chat_id")
 
     def user_(self, obj):
         return format_html(

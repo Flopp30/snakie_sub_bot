@@ -14,8 +14,6 @@ from rangefilter.filters import (
     DateRangeQuickSelectListFilterBuilder,
 )
 
-from utils.helpers import ban_user_in_owned_bots
-
 
 class IsSubscriberFilter(admin.SimpleListFilter):
     title = 'Подписан на клуб'
@@ -69,15 +67,29 @@ class UserAdmin(admin.ModelAdmin):
                 default_end=datetime.now(),
             ),
         ),
+        (
+            'last_visit_time',
+            DateRangeQuickSelectListFilterBuilder(
+                title="Дата последнего посещения",
+                default_start=datetime.now(),
+                default_end=datetime.now(),
+            ),
+        ),
+        (
+            'registration_datetime',
+            DateRangeQuickSelectListFilterBuilder(
+                title="Дата и время регистрации",
+                default_start=datetime.now(),
+                default_end=datetime.now(),
+            ),
+        ),
+        'state',
         'is_superuser',
-        'last_visit_time',
-        'registration_datetime',
-        'state'
     )
     ordering = ('-id', 'username', 'last_visit_time')
     list_per_page = 20
     list_prefetch_related = ['subscriptions', ]
-    search_fields = ('username', 'state')
+    search_fields = ('username', 'state', 'chat_id')
 
     def link_(self, obj):
         return format_html(

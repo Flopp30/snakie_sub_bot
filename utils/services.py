@@ -65,8 +65,10 @@ async def create_payment(product: Product, user: User, additional_data: dict = {
 def create_yoo_auto_payment(
         sub: Subscription,
         product: Product,
-        metadata: dict = {}
+        metadata: dict = None
 ) -> dict:
+    if metadata is None:
+        metadata = {}
     idempotence_key = str(uuid.uuid4())
     payment = Yoo_Payment.create(
         {
