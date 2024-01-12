@@ -236,11 +236,12 @@ def main():
         interval=timedelta(hours=1),
         first=5
     )
-    job_queue.run_repeating(
-        send_reminders_notification,
-        interval=timedelta(hours=1),
-        first=10
-    )
+    # TODO remove later
+    # job_queue.run_repeating(
+    #     send_reminders_notification,
+    #     interval=timedelta(hours=1),
+    #     first=10
+    # )
 
     application.add_handler(PrefixHandler(
         '!', ['reload_data'], reload_from_db))
