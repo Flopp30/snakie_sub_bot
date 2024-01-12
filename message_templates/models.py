@@ -24,35 +24,15 @@ class MessageTemplatesInMemory:
     default_message: str = 'Нет шаблона {key}'
 
     @classmethod
-    def get(cls, key, default=None):
-        # TODO remove both sync methods, when will you transfer payment views to async
-        if not cls.templates:
-            cls.load_templates()
-        if not default:
-            default = cls.default_message.format(key=key)
-        return cls.templates.get(key, default)
-
-    @classmethod
-    def load_templates(cls, *args, **kwargs):
-        cls.templates = {}
-        for template in Template.objects.all():
-            cls.templates[template.name] = (
-                template.content
-                .replace('<div>', '').replace('</div>', '')
-                .replace('<br />', '').replace('&nbsp;', '')
-                .replace('<p>', '').replace('</p>', '')
-            )
-
-    @classmethod
     async def aget(cls, key, default=None):
         if not cls.templates:
-            await cls.aload_templates()
+            await cls.load_templates()
         if not default:
             default = cls.default_message.format(key=key)
         return cls.templates.get(key, default)
 
     @classmethod
-    async def aload_templates(cls, *args, **kwargs):
+    async def load_templates(cls, *args, **kwargs):
         cls.templates = {}
         async for template in Template.objects.all():
             cls.templates[template.name] = (

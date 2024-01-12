@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 
 import telegram
 from dateutil.relativedelta import relativedelta
@@ -59,21 +59,31 @@ async def check_bot_context(update, context, force_update: bool = False):
                 'username': update.effective_chat.username
             }
         )
-        active_sub = await user.subscriptions.select_related('product').filter(is_active=True).afirst()
+        active_sub = (
+            await user.subscriptions.select_related('product').order_by('-unsub_date').filter(is_active=True).afirst()
+        )
         setattr(user, 'active_subscription', active_sub)
+        if not active_sub:
+            last_sub = (
+                await user.subscriptions
+                .select_related('product')
+                .filter(unsub_date__gte=timezone.now() - timedelta(days=7))
+                .order_by('-unsub_date')
+                .afirst()
+            )
+            setattr(user, 'last_sub', last_sub)
         context.user_data['user'] = user
 
 
-def get_tariffs_text() -> str:
+def get_tariffs_text(user) -> str:
     """
         Машина фитнеса - 1 месяц, <s>2000</s> 1800 RUB
     """
-    result = ''
+    result = '\n\n'
     prep_text = (
         '{displayed_name} - {period_name}, <s>{crossed_out_price}</s> {payment_amount} {payment_currency}\n'
     )
     crossed_out_price = None
-
     for product in sorted(ProductsInMemory.trial_products, key=lambda x: x.amount):
         result += prep_text.format(
             displayed_name=product.displayed_name,
@@ -100,6 +110,15 @@ def get_tariffs_text() -> str:
                 payment_amount=product.amount,
                 crossed_out_price=float(crossed_out_price) * product.sub_period,
                 payment_currency=product.currency,
+            )
+    if user.last_sub is not None:
+        product = user.last_sub.product
+        result += "\n(доступно 7 дней!)\nВозобновление прошлой подписки по старой цене: \n" + prep_text.format(
+                displayed_name=product.displayed_name,
+                period_name=product.payment_name,
+                payment_amount=user.last_sub.payment_amount,
+                crossed_out_price='',
+                payment_currency=user.last_sub.payment_currency,
             )
 
     return result

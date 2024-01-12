@@ -23,7 +23,7 @@ logger = logging.getLogger(__name__)
 
 async def reload_in_memory_data(*args, **kwargs):
     await ProductsInMemory.load_products()
-    await MessageTemplatesInMemory.aload_templates()
+    await MessageTemplatesInMemory.load_templates()
     await SalesInMemory.update_sales_is_available()
     await ContentInMemory.aload_contents()
     await OwnedBotsInMemory.areload_bots()
@@ -69,7 +69,7 @@ async def renew_sub_hourly(context: CallbackContext):
             await send_tg_message(
                 chat_id=sub.user.chat_id,
                 message=mes_text,
-                keyboard=get_tariff_board(),
+                keyboard=get_tariff_board(sub=sub),
                 context=context
             )
 

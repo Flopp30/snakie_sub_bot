@@ -17,15 +17,37 @@ UNSUB_BOARD = InlineKeyboardMarkup(
 )
 
 
-def get_tariff_board():
+def get_tariff_board(user=None, sub=None):
+    if sub is None and user and user.last_sub:
+        sub = user.last_sub
     buttons = []
-    for product in sorted(ProductsInMemory.products_by_id.values(), key=lambda x: x.amount):
-        text = f"{product.payment_name}, {product.amount} {product.currency}"
+    if sub:
+        text = (
+            f"Возобновление {sub.product.payment_name}, "
+            f"{sub.payment_amount} {sub.payment_currency}"
+        )
         buttons.append(
             [
-                InlineKeyboardButton(text, callback_data=product.pk)
+                InlineKeyboardButton(text, callback_data="last_sub")
             ]
         )
+        for product in sorted(ProductsInMemory.products_by_id.values(), key=lambda x: x.amount):
+            if (product.amount != sub.payment_amount
+                    and product.payment_name != sub.product.payment_name):
+                text = f"{product.payment_name}, {product.amount} {product.currency}"
+                buttons.append(
+                    [
+                        InlineKeyboardButton(text, callback_data=product.pk)
+                    ]
+                )
+    else:
+        for product in sorted(ProductsInMemory.products_by_id.values(), key=lambda x: x.amount):
+            text = f"{product.payment_name}, {product.amount} {product.currency}"
+            buttons.append(
+                [
+                    InlineKeyboardButton(text, callback_data=product.pk)
+                ]
+            )
     return InlineKeyboardMarkup(buttons)
 
 

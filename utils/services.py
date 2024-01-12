@@ -40,17 +40,19 @@ def create_yoo_payment(payment_amount, payment_currency, product_name, sub_perio
     return json.loads(payment.json())
 
 
-async def create_payment(product: Product, user: User, additional_data: dict = {}):
+async def create_payment(product: Product, user: User, additional_data: dict = None, payment_amount: int = None):
+    if additional_data is None:
+        additional_data = {}
     yoo_payment = create_yoo_payment(
-        payment_amount=product.amount,
+        payment_amount=payment_amount or product.amount,
         payment_currency=product.currency,
         product_name=product.displayed_name,
         sub_period=product.payment_name,
         metadata={
-            'product_id': product.pk,
-            "user_id": user.pk,
-            "auto_payment": "false",
-        } | additional_data
+                     'product_id': product.pk,
+                     "user_id": user.pk,
+                     "auto_payment": "false",
+                 } | additional_data
     )
     await Payment.objects.acreate(
         status=PaymentStatus.PENDING,

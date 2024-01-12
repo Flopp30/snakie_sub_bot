@@ -87,12 +87,17 @@ async def handle_welcome_choice(update: Update, context: ContextTypes.DEFAULT_TY
     await check_bot_context(update, context)
     if not update.callback_query:
         return 'WELCOME_CHOICE'
-    text = (await MessageTemplatesInMemory.aget('tariffs')) + get_tariffs_text()
+    user = context.user_data['user']
+    text = (await MessageTemplatesInMemory.aget('tariffs'))
+    if user.last_sub:
+        text += "\n\nВозобновление подписки доступно 3 дня ♥"
+    else:
+        text += get_tariffs_text(user)
     await send_tg_message(
         chat_id=update.effective_chat.id,
         context=context,
         message=text,
-        keyboard=get_tariff_board()
+        keyboard=get_tariff_board(context.user_data['user'])
     )
     context.user_data['user'].state = 'TARIFF_CHOICE'
     return 'TARIFF_CHOICE'
@@ -102,14 +107,29 @@ async def handle_tariffs_choice(update: Update, context: ContextTypes.DEFAULT_TY
     if not update.callback_query.data:
         return 'TARIFF_CHOICE'
     await check_bot_context(update, context)
-    product = await ProductsInMemory.get(int(update.callback_query.data))
-    payment_url = await create_payment(product, context.user_data['user'])
+
+    try:
+        product = await ProductsInMemory.get(int(update.callback_query.data))
+        payment_url = await create_payment(product, context.user_data['user'])
+        amount = product.amount
+        currency = product.currency
+    except ValueError:
+        last_sub = context.user_data['user'].last_sub
+        product = last_sub.product
+        payment_url = await create_payment(
+            product=product,
+            user=context.user_data['user'],
+            additional_data={"sub_id": last_sub.pk},
+            payment_amount=last_sub.payment_amount,
+        )
+        amount = last_sub.payment_amount
+        currency = last_sub.payment_currency
 
     mes_text = (
         await MessageTemplatesInMemory.aget('text_with_payload_link', default='У тебя есть {time} для оплаты')
     ).format(time=settings.PAYMENT_LINK_TTL)
     keyboard = get_payment_board(
-        button_text=f'Оплатить {product.amount} {product.currency}',
+        button_text=f'Оплатить {amount} {currency}',
         payment_url=payment_url
     )
     await send_tg_message(
