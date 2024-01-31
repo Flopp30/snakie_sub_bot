@@ -24,7 +24,7 @@ class OwnedChatAdmin(admin.ModelAdmin):
 
 
 @admin.register(AfterPaymentContent)
-class OwnedChatAdmin(admin.ModelAdmin):
+class AfterPaymentContentAdmin(admin.ModelAdmin):
     list_display = (
         'pk', 'name', 'link'
     )

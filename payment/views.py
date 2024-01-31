@@ -86,7 +86,6 @@ class YooPaymentCallBackView(View):
         payment.status = PaymentStatus.SUCCEEDED
         metadata = returned_obj.get('metadata')
         is_auto_payment = metadata.get('auto_payment') == "true"
-        old_sub_id = metadata.get('sub_id')
         product = await Product.objects.aget(pk=metadata.get('product_id'))
         if is_auto_payment:
             subscription = await Subscription.objects.aget(
@@ -95,6 +94,7 @@ class YooPaymentCallBackView(View):
                 product=product
             )
         else:
+            old_sub_id = metadata.get('sub_id')
             if old_sub_id:
                 subscription = await Subscription.objects.aget(
                     pk=old_sub_id
@@ -145,11 +145,11 @@ class YooPaymentCallBackView(View):
                     {content.name: content.link}
                 )
             payload = get_tg_payload(payment.user.chat_id, text, buttons)
+            await aunban_user_in_owned_bots(payment.user.chat_id)
 
         await subscription.asave()
         await payment.asave()
         self.send_tg_message(payload)
-        await aunban_user_in_owned_bots(payment.user.chat_id)
 
     async def process_payment_canceled(self, payment, returned_obj):
         payment.status = PaymentStatus.CANCELED

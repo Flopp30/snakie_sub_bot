@@ -7,10 +7,10 @@ from django.contrib import messages
 from django.shortcuts import redirect
 from django.views import View
 
-from product.models import SubPeriodTypes
+from product.models import SubPeriodTypes, Product
 from subscription.models import Subscription
 from user.models import User
-from utils.helpers import get_tg_payload
+from utils.helpers import get_tg_payload, get_tg_payload_with_callbacks
 
 
 class SendMessageView(View):
@@ -32,7 +32,15 @@ class SendMessageView(View):
         tasks = []
         async with aiohttp.ClientSession() as session:
             async for user in users:
-                payload = get_tg_payload(chat_id=user.chat_id, message_text=text)
+                if to_users == "all_unsub" and request.POST.get("with_keyboard") == "true":
+                    buttons = []
+                    async for product in Product.objects.filter(is_active=True).order_by('amount'):
+                        buttons.append({f"{product.payment_name}, {product.amount} {product.currency}": product.pk})
+                    payload = get_tg_payload_with_callbacks(chat_id=user.chat_id,
+                                                            message_text=text,
+                                                            buttons=buttons)
+                else:
+                    payload = get_tg_payload(chat_id=user.chat_id, message_text=text)
                 tasks.append(asyncio.create_task(self.send_message(session, payload)))
 
             await asyncio.gather(*tasks)

@@ -45,6 +45,14 @@ function sendMessageModalProcess() {
     let openBtns = document.querySelectorAll(".send-msg-btn");
     let closeBtns = modal.querySelectorAll(".close");
     let form = modal.querySelector('#send-message-form');
+    let withKeyboard = form.querySelector('#id_with_keyboard_container');
+    form.querySelector("#id_to_users").addEventListener("change", function (event) {
+        if (event.target.value === "all_unsub") {
+            withKeyboard.classList.remove("hidden");
+        } else {
+            withKeyboard.classList.add("hidden");
+        }
+    });
     let userInput = form.querySelector('input[name="user_id"]');
     openBtns.forEach((btn) => {
         btn.onclick = function () {
