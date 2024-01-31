@@ -66,7 +66,7 @@
             <div class="modal-header">
                 <h2 class="modal-title">Отправить сообщение <span class="close">&times;</span></h2>
             </div>
-            <form id="send-message-form" method="POST" action="{% url 'users:send_message' %}">
+            <form enctype="multipart/form-data" id="send-message-form" method="POST" action="{% url 'users:send_message' %}">
                 {% csrf_token %}
                 <div class="form-group">
                     <label for="id_to_users">Для кого?</label>
@@ -92,6 +92,8 @@
                     <label for="message_text_id">Текст сообщения</label>
                     <textarea class="text-input-lg" name="message_text" id="message_text_id"
                               placeholder="..."></textarea>
+                    <label for="id_image">Картиночку?</label>
+                    <input type="file" name="image" id="id_image">
                 </div>
                 <input type="hidden" name="user_id" value="">
                 <div class="modal-footer">

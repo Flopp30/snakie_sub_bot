@@ -12,6 +12,7 @@ TELEGRAM_TOKEN = env('BOT_TOKEN')
 TG_BOT_URL = env('BOT_UTL', 'https://web.telegram.org/k/#@SnackieBirdSubscribeBot')
 TELEGRAM_API_URL = f'https://api.telegram.org/bot{TELEGRAM_TOKEN}/'
 TG_SEND_MESSAGE_URL = TELEGRAM_API_URL + 'sendMessage'
+TG_SEND_PHOTO_URL = TELEGRAM_API_URL + 'sendPhoto'
 TG_BAN_URL = TELEGRAM_API_URL + 'kickChatMember'
 TG_UNBAN_URL = TELEGRAM_API_URL + 'unbanChatMember'
 BOT_MODE = env('BOT_MODE', 'polling')

@@ -1,7 +1,7 @@
 import asyncio
+import json
 
 import aiohttp
-import requests
 from django.conf import settings
 from django.contrib import messages
 from django.shortcuts import redirect
@@ -27,21 +27,42 @@ class SendMessageView(View):
     async def post(self, request, **kwargs):
         to_users = request.POST.get('to_users')
         user_pk = request.POST.get('user_id')
-        users = self.get_users(to_users, user_pk)
         text = request.POST.get('message_text')
+        with_keyboard = to_users == "all_unsub" and request.POST.get("with_keyboard") == "true"
+        users = self.get_users(to_users, user_pk)
+        image_file = request.FILES.get('image')
+        if image_file:
+            image_file = image_file.read()
+        buttons = []
+        if with_keyboard:
+            async for product in Product.objects.filter(is_active=True).order_by('amount'):
+                buttons.append({f"{product.payment_name}, {product.amount} {product.currency}": product.pk})
+
         tasks = []
         async with aiohttp.ClientSession() as session:
             async for user in users:
-                if to_users == "all_unsub" and request.POST.get("with_keyboard") == "true":
-                    buttons = []
-                    async for product in Product.objects.filter(is_active=True).order_by('amount'):
-                        buttons.append({f"{product.payment_name}, {product.amount} {product.currency}": product.pk})
+                if with_keyboard:
+                    user.state = "TARIFF_CHOICE"
                     payload = get_tg_payload_with_callbacks(chat_id=user.chat_id,
                                                             message_text=text,
                                                             buttons=buttons)
                 else:
                     payload = get_tg_payload(chat_id=user.chat_id, message_text=text)
-                tasks.append(asyncio.create_task(self.send_message(session, payload)))
+
+                if image_file:
+                    form = aiohttp.FormData()
+                    form.add_field('photo', image_file, filename='photo.jpg', content_type='image/jpeg')
+                    form.add_field('caption', text)
+                    form.add_field('text', text)
+                    form.add_field('chat_id', str(user.chat_id))
+                    if with_keyboard:
+                        form.add_field('reply_markup',
+                                       json.dumps(payload["reply_markup"]),
+                                       content_type="application/json")
+                    task = self.send_photo(session, form=form)
+                else:
+                    task = self.send_message(session, payload=payload)
+                tasks.append(asyncio.create_task(task))
 
             await asyncio.gather(*tasks)
         report_mes = self.report_message.format(
@@ -50,12 +71,25 @@ class SendMessageView(View):
             block_counter=self.block_counter
         )
         messages.add_message(request, messages.SUCCESS, report_mes)
+        await User.objects.abulk_update(users, ['state'])
         return redirect(self.return_url)
+
+    async def send_photo(self, session, form):
+        response = await session.post(
+            settings.TG_SEND_PHOTO_URL,
+            data=form,
+        )
+        if response.status == 200:
+            self.success_counter += 1
+        elif response.status == 403:
+            self.block_counter += 1
+        else:
+            self.error_counter += 1
 
     async def send_message(self, session, payload):
         response = await session.post(
             settings.TG_SEND_MESSAGE_URL,
-            json=payload
+            json=payload,
         )
         if response.status == 200:
             self.success_counter += 1
