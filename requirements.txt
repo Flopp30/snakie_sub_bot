@@ -3,7 +3,8 @@ environs==9.5.0
 python-telegram-bot==20.4
 requests==2.31.0
 Pillow==10.0.*
-yookassa==2.4.*
+# yookassa==2.4.*
+yookassa==3.0.*
 django-relativedelta==2.0.*
 python-telegram-bot[job-queue]
 dj-database-url==2.1.0

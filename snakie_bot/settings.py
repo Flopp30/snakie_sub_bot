@@ -21,7 +21,7 @@ LOG_LEVEL = env.int('LOG_LEVEL', 10)
 # Payment system definition
 YOO_TOKEN = env('YOO_TOKEN')
 YOO_SHOP_ID = env('SHOP_ID')
-PAYMENT_LINK_TTL = 60  # min
+PAYMENT_LINK_TTL = 10  # min
 
 # for requests
 HEADERS = {
