@@ -120,7 +120,7 @@ class YooPaymentCallBackView(View):
             text = (await MessageTemplatesInMemory.aget('auto_payment_success', default=default)).format(
                 payment_name=product.payment_name,
             )
-            payload = get_tg_payload(subscription.user.chat_id, text)
+            payload = get_tg_payload(payment.user.chat_id, text)
 
         else:
             subscription.verified_payment_id = returned_obj.get('payment_method', {}).get('id', None)

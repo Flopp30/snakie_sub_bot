@@ -50,7 +50,7 @@ async def help_(update: Update, context: ContextTypes.DEFAULT_TYPE):
     return 'START'
 
 
-async def start(update, context):
+async def start(update: Update, context):
     await check_bot_context(update, context, force_update=True)
     user = context.user_data['user']
     keyboard = None
