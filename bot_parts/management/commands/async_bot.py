@@ -1,9 +1,9 @@
 import logging
 from datetime import timedelta
 
-import telegram
 from django.conf import settings
 from django.core.management import BaseCommand
+from django.utils import timezone
 from telegram import Update
 from telegram.ext import (
     ApplicationBuilder,
@@ -15,13 +15,14 @@ from telegram.ext import (
     PrefixHandler
 )
 
-from bot_parts.helpers import check_bot_context, get_tariffs_text, chat_is_private, get_beautiful_sub_date, \
-    send_tg_message
+from bot_parts.helpers import (check_bot_context, get_tariffs_text,
+                               chat_is_private, get_beautiful_sub_date,
+                               send_tg_message)
 from bot_parts.keyboards import START_BOARD, get_tariff_board, get_payment_board, UNSUB_BOARD, get_content_board
-from bot_parts.models import SalesInMemory, ContentInMemory, OwnedBotsInMemory, OwnedChatInMemory
+from bot_parts.models import SalesInMemory
+from bot_parts.periodic_tasks import renew_sub_hourly, reload_in_memory_data
 from message_templates.models import MessageTemplatesInMemory
 from product.models import ProductsInMemory
-from bot_parts.periodic_tasks import renew_sub_hourly, reload_in_memory_data, send_reminders_notification
 from utils.services import create_payment
 
 logger = logging.getLogger('tbot')
@@ -55,6 +56,12 @@ async def start(update: Update, context):
     user = context.user_data['user']
     keyboard = None
     if user.active_subscription:
+        if not user.first_sub_date:
+            if user.active_subscription.start_date:
+                user.first_sub_date = user.active_subscription.start_date
+            else:
+                user.first_sub_date = timezone.now()
+            await user.asave()
         keyboard = await get_content_board()
         mes_text = (await MessageTemplatesInMemory.aget('start_is_active')).format(
             first_sub_date=user.first_sub_date.strftime("%d.%m.%Y"),
