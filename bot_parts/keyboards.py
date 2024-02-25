@@ -21,7 +21,7 @@ def get_tariff_board(user=None, sub=None):
     if sub is None and user and user.last_sub:
         sub = user.last_sub
     buttons = []
-    if sub:
+    if sub and not sub.product.is_trial:
         text = (
             f"Возобновление {sub.product.payment_name}, "
             f"{sub.payment_amount} {sub.payment_currency}"
@@ -31,7 +31,7 @@ def get_tariff_board(user=None, sub=None):
                 InlineKeyboardButton(text, callback_data="last_sub")
             ]
         )
-        for product in sorted(ProductsInMemory.products_by_id.values(), key=lambda x: x.amount):
+        for product in sorted(ProductsInMemory.not_trial_products, key=lambda x: x.amount):
             if (product.amount != sub.payment_amount
                     and product.payment_name != sub.product.payment_name):
                 text = f"{product.payment_name}, {product.amount} {product.currency}"
@@ -41,13 +41,22 @@ def get_tariff_board(user=None, sub=None):
                     ]
                 )
     else:
-        for product in sorted(ProductsInMemory.products_by_id.values(), key=lambda x: x.amount):
+        if user and user.first_sub_date is None:
+            for product in sorted(ProductsInMemory.trial_products, key=lambda x: x.amount):
+                text = f"{product.payment_name}, {product.amount} {product.currency}"
+                buttons.append(
+                    [
+                        InlineKeyboardButton(text, callback_data=product.pk)
+                    ]
+                )
+        for product in sorted(ProductsInMemory.not_trial_products, key=lambda x: x.amount):
             text = f"{product.payment_name}, {product.amount} {product.currency}"
             buttons.append(
                 [
                     InlineKeyboardButton(text, callback_data=product.pk)
                 ]
             )
+
     return InlineKeyboardMarkup(buttons)
 
 

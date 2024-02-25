@@ -69,7 +69,7 @@ async def renew_sub_hourly(context: CallbackContext):
             await send_tg_message(
                 chat_id=sub.user.chat_id,
                 message=mes_text,
-                keyboard=get_tariff_board(sub=sub),
+                keyboard=get_tariff_board(user=sub.user, sub=sub),
                 context=context
             )
 

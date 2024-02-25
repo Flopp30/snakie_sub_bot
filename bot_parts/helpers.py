@@ -67,7 +67,7 @@ async def check_bot_context(update, context, force_update: bool = False):
             last_sub = (
                 await user.subscriptions
                 .select_related('product')
-                .filter(unsub_date__gte=timezone.now() - timedelta(days=7))
+                .filter(unsub_date__gte=timezone.now() - timedelta(days=7), product__is_trial=False)
                 .order_by('-unsub_date')
                 .afirst()
             )

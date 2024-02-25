@@ -99,6 +99,7 @@ class YooPaymentCallBackView(View):
                 subscription = await Subscription.objects.aget(
                     pk=old_sub_id
                 )
+                subscription.is_auto_renew = True
             else:
                 subscription = await Subscription.objects.acreate(
                     is_active=True,
@@ -106,14 +107,14 @@ class YooPaymentCallBackView(View):
                     product=product,
                     payment_amount=payment.amount,
                     payment_currency=payment.currency,
+                    is_auto_renew=not product.is_trial,
                 )
-        match product.sub_period_type:
-            case SubPeriodTypes.month:
-                subscription.unsub_date = datetime.datetime.now() + relativedelta(months=product.sub_period)
-            case SubPeriodTypes.day:
-                subscription.unsub_date = datetime.datetime.now() + relativedelta(days=product.sub_period)
+        if product.sub_period_type == SubPeriodTypes.month:
+            subscription.unsub_date = datetime.datetime.now() + relativedelta(months=product.sub_period)
+        else:
+            subscription.unsub_date = datetime.datetime.now() + relativedelta(days=product.sub_period)
 
-        subscription.is_active, subscription.is_auto_renew = True, True
+        subscription.is_active = True
 
         if is_auto_payment:
             default = "Подписка на {payment_name} фитнеса успешно продлена \uD83D\uDCAA"
@@ -178,18 +179,21 @@ class YooPaymentCallBackView(View):
         payment.user.state = 'TARIFF_CHOICE'
         await payment.user.asave()
         buttons = []
+        product_qs = Product.objects.filter(is_active=True).order_by('amount')
+        if await payment.user.subscriptions.aexists():
+            product_qs = product_qs.filter(is_trial=False)
         if old_sub_id:
             sub = await Subscription.objects.select_related("product").aget(pk=old_sub_id)
             buttons.append({
                 f"Возобновление {sub.product.payment_name}, {sub.payment_amount} {sub.payment_currency}": "last_sub"
             })
-            async for product in Product.objects.filter(is_active=True).order_by('amount'):
+            async for product in product_qs:
                 if product.payment_name != sub.payment_name and product.amount != sub.payment_amount:
                     buttons.append({
                         f"{product.payment_name}, {product.amount} {product.currency}": product.pk
                     })
         else:
-            async for product in Product.objects.filter(is_active=True).order_by('amount'):
+            async for product in product_qs:
                 buttons.append({
                     f"{product.payment_name}, {product.amount} {product.currency}": product.pk
                 })

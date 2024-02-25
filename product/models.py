@@ -80,4 +80,7 @@ class ProductsInMemory:
         cls.not_trial_products = []
         async for product in Product.objects.filter(is_active=True):
             cls.products_by_id[product.pk] = product
-            cls.trial_products.append(product) if product.is_trial else cls.not_trial_products.append(product)
+            if product.is_trial:
+                cls.trial_products.append(product)
+            else:
+                cls.not_trial_products.append(product)
