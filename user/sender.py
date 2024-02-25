@@ -73,7 +73,6 @@ class UserSender:
         form = aiohttp.FormData()
         form.add_field('photo', image_io, filename='photo.jpg', content_type='image/jpeg')
         form.add_field('caption', message_text)
-        form.add_field('text', message_text)
         form.add_field('chat_id', str(payload["chat_id"]))
         if "reply_markup" in payload:
             form.add_field('reply_markup',

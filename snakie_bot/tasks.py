@@ -3,7 +3,7 @@ from typing import TextIO
 
 from celery import shared_task
 
-from user.tasks import UserSender
+from user.sender import UserSender
 
 
 @shared_task
