@@ -58,7 +58,7 @@ async def renew_sub_hourly(context: CallbackContext):
             unsub_users.append(sub.user)
             await ban_user_in_owned_bots(sub.user.chat_id, bot_context=context)
             if sub.product.is_trial:
-                key = 'trail_ended'
+                key = 'trial_ended'
             else:
                 key = 'not_auto_renew'
 

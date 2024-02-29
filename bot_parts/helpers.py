@@ -84,14 +84,15 @@ def get_tariffs_text(user) -> str:
         '{displayed_name} - {period_name}, <s>{crossed_out_price}</s> {payment_amount} {payment_currency}\n'
     )
     crossed_out_price = None
-    for product in sorted(ProductsInMemory.trial_products, key=lambda x: x.amount):
-        result += prep_text.format(
-            displayed_name=product.displayed_name,
-            period_name=product.payment_name,
-            crossed_out_price='',
-            payment_amount=product.amount,
-            payment_currency=product.currency,
-        )
+    if user.first_sub_date is None:
+        for product in sorted(ProductsInMemory.trial_products, key=lambda x: x.amount):
+            result += prep_text.format(
+                displayed_name=product.displayed_name,
+                period_name=product.payment_name,
+                crossed_out_price='',
+                payment_amount=product.amount,
+                payment_currency=product.currency,
+            )
 
     for product in sorted(ProductsInMemory.not_trial_products, key=lambda x: x.amount):
         if not crossed_out_price:
